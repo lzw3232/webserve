@@ -10,17 +10,75 @@
 #include "./framework/ERR/ERR_EXIT.h"
 
 using namespace std;
+
+struct packet{
+    int len;
+    char buf[1024];
+};
+
+ssize_t readn(int fd, void *buf, size_t count){
+    size_t nleft = count;
+    ssize_t nread;
+    char* bufp = (char*)buf;
+    while(nleft>0){
+        if((nread = recv(fd,bufp,nleft,0))<0){
+            if(errno = EINTR)
+                continue;
+                return-1;
+        }
+        else if(nread==0){
+            return nread;
+        }
+        bufp += nread;
+        nleft -=nread;
+    }
+    return count;
+}
+
+ssize_t writen(int fd, void *buf, size_t count){
+    size_t nleft = count;
+    ssize_t nwrite;
+    char* bufp = (char*)buf;
+    while(nleft>0){
+        if((nwrite = send(fd,bufp,nleft,0))<0){
+            if(errno = EINTR)
+                continue;
+                return-1;
+        }
+        else if(nwrite==0){
+            continue;
+        }
+        bufp += nwrite;
+        nleft -=nwrite;
+    }
+    return count;
+}
+
+
 void serve(int conn){
-    char recvbuf[1024]={0};
+    struct packet recvbuf;
     while(1){
-        memset(recvbuf,0,sizeof(recvbuf));
-        int ret = recv(conn,recvbuf,sizeof(recvbuf),0);
-        if(ret==0){
+        memset(&recvbuf,0,sizeof(recvbuf));
+        //读数据
+        int ret = readn(conn,&(recvbuf.len),4);
+        if(ret==-1)
+            ERR_EXIT("read");
+        if(ret<4){
             cout<<"client close"<<endl;
             break;
         }
-        fputs(recvbuf,stdout);
-        send(conn,recvbuf,sizeof(recvbuf),0);
+        int n = ntohl(recvbuf.len);
+        ret = readn(conn,recvbuf.buf,n);
+        if(ret==-1)
+            ERR_EXIT("read");
+        if(ret<n){
+            cout<<"client close"<<endl;
+            break;
+        }
+        
+        fputs(recvbuf.buf,stdout);
+        //写数据
+        writen(conn,&recvbuf,n+4);
     }
 }
 
