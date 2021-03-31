@@ -12,12 +12,6 @@
 
 using namespace std;
 
-
-struct packet{
-    int len;
-    char buf[1024];
-};
-
 ssize_t readn(int fd, void *buf, size_t count){
     size_t nleft = count;
     ssize_t nread;
@@ -71,34 +65,19 @@ int main(){
     if(connect(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr))<0)
         cout<<"bind"<<endl;
 
-    struct packet sendbuf;
-    struct packet recvbuf;
-    memset(&recvbuf,0,sizeof(recvbuf));
-    memset(&sendbuf,0,sizeof(sendbuf));
+    char sendbuf[1024];
+    char recvbuf[1024];
     int len;
-    while(fgets(sendbuf.buf,sizeof(sendbuf.buf),stdin)!=NULL){
-        len = strlen(sendbuf.buf);
-        sendbuf.len = ntohl(len);
-        //写数据
-        writen(listenfd,&sendbuf,len+4);
-        //读数据
-        int ret = readn(listenfd,&(recvbuf.len),4);
+    while(fgets(sendbuf,sizeof(sendbuf),stdin)!=NULL){
+        writen(listenfd,&sendbuf,sizeof(sendbuf));
+        int ret = readn(listenfd,recvbuf,sizeof(recvbuf));
         if(ret==-1)
             ERR_EXIT("read");
-        if(ret<4){
+        if(ret==0){
             cout<<"client close"<<endl;
             break;
         }
-        int n = ntohl(recvbuf.len);
-        ret = readn(listenfd,recvbuf.buf,n);
-        if(ret==-1)
-            ERR_EXIT("read");
-        if(ret<n){
-            cout<<"client close"<<endl;
-            break;
-        }
-        fputs(sendbuf.buf,stdout);
-
+        fputs(recvbuf,stdout);
         memset(&recvbuf,0,sizeof(recvbuf));
         memset(&sendbuf,0,sizeof(sendbuf));
 

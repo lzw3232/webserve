@@ -1,6 +1,6 @@
 #define ERR_EXIT(m) \
      do \
-	 {\
-		cout<<m<<endl;\
+	 { \
+		perror(m); \
 		exit(EXIT_FAILURE);\
 	 }while(0)
