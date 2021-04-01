@@ -9,16 +9,15 @@ ssize_t readn(int fd, void *buf, size_t count){
     char* bufp = (char*)buf;
     while(nleft>0){
         if((nread = recv(fd,bufp,nleft,0))<0){
-            if(errno = EINTR)
-                continue;
-                return-1;
+            if(errno = EINTR) continue;
+            ERR_EXIT("errno");
         }
         else if(nread==0){
             return readNum;
         }
         bufp += nread;
         nleft -=nread;
-        readNum+=nread;
+        readNum += nread;
     }
     return readNum;
 }

@@ -1,6 +1,6 @@
 CXX = g++
 
-CPP_FLAG = -std=c++11 -Wall
+CPP_FLAG = -std=c++11 -Wall -pthread
 
 BASE_DIR = $(shell pwd)
 
@@ -12,7 +12,7 @@ BUILD_DIR = $(wildcard ./framework/*/*.cpp ./*.cpp)
 
 OBJ_DIR = $(patsubst %.cpp,%.o,$(BUILD_DIR))
 
-LIB = -lstdc++
+LIB = -lstdc++ -lpthread
 
 run:clean app
 	$(BASE_DIR)/app

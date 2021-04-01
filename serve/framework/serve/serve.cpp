@@ -1,6 +1,6 @@
 #include "./serve.h"
 
-serve::serve(/* args */)
+serve::serve(int port)
 {
     if((listenfd = socket(AF_INET,SOCK_STREAM,0))<0)
         ERR_EXIT("socket");
@@ -8,14 +8,20 @@ serve::serve(/* args */)
     struct sockaddr_in servaddr;
     memset(&servaddr,0,sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(5188);
+    servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+	int on = 1;
+	setsockopt(listenfd , SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int)) ;
 
     if(bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr))<0)
         ERR_EXIT("bind");
 
     if(listen(listenfd,SOMAXCONN)<0)
         ERR_EXIT("listen");
+
+    pool = new threadpool(4);
+    pool->start();
 }
 
 void serve::start(){
@@ -25,9 +31,8 @@ void serve::start(){
     socklen_t peerlen = sizeof(peeraddr);
 
     int conn;
-    std::vector<epoll_event> events;
 
-    int epollfd = epoll_create1(EPOLL_CLOEXEC);
+    epollfd = epoll_create1(EPOLL_CLOEXEC);
     struct epoll_event event;
     event.data.fd = listenfd;
     event.events = EPOLLIN | EPOLLET|EPOLLRDHUP;
@@ -63,22 +68,32 @@ void serve::start(){
             else if(events[i].events & EPOLLIN){
                 conn = events[i].data.fd;
                 if(conn<0) ERR_EXIT("conn");
-                char recvbuf[1024];
-                int ret = readn(conn,recvbuf,sizeof(recvbuf));
-                if(ret==-1)
-                    ERR_EXIT("read");
-                if(ret=0){
-                    std::cout<<"client close"<<std::endl;
-                    close(conn);
-                    event = events[i];
-                    epoll_ctl(epollfd,EPOLL_CTL_DEL,conn,&event);
-                    events.erase(events.begin()+i,events.begin()+i+1);
-                }
-                else{
-                    fputs(recvbuf,stdout);
-                    //写数据
-                    writen(conn,&recvbuf,sizeof(recvbuf));
-                }
+                // response(conn,i);
+
+                task* ta = new task(conn,epollfd,&events,i);
+                pool->addtask(ta);
+
+                // char recvbuf[1024];
+                // struct epoll_event event;
+                // int ret = readn(conn,recvbuf,sizeof(recvbuf));
+                // if(ret==-1)
+                //     ERR_EXIT("read");
+                // if(ret=0){
+                //     std::cout<<"client close"<<std::endl;
+                //     close(conn);
+                //     event = events[i];
+
+                //     std::unique_lock<std::mutex>lk(_mutex);
+                //     epoll_ctl(epollfd,EPOLL_CTL_DEL,conn,&event);
+                //     events.erase(events.begin()+i,events.begin()+i+1);
+                //     lk.unlock();
+                
+                // }
+                // else{
+                //     fputs(recvbuf,stdout);
+                //     //写数据
+                //     writen(conn,&recvbuf,sizeof(recvbuf));
+                // }
             }
 
         }
@@ -87,6 +102,34 @@ void serve::start(){
     close(listenfd);
 }
 
+
+// static void serve::response(int conn,void *a,int i)
+// {
+//     char recvbuf[1024];
+//     struct epoll_event event;
+//     int ret = readn(conn,recvbuf,sizeof(recvbuf));
+//     if(ret==-1)
+//         ERR_EXIT("read");
+//     if(ret=0){
+//         std::cout<<"client close"<<std::endl;
+//         close(conn);
+//         event = events[i];
+
+//         std::unique_lock<std::mutex>lk(_mutex);
+//         epoll_ctl(epollfd,EPOLL_CTL_DEL,conn,&event);
+//         events.erase(events.begin()+i,events.begin()+i+1);
+//         lk.unlock();
+    
+//     }
+//     else{
+//         fputs(recvbuf,stdout);
+//         //写数据
+//         writen(conn,&recvbuf,sizeof(recvbuf));
+//     }
+//     return;
+// }
+
 serve::~serve()
 {
+    delete pool;
 }

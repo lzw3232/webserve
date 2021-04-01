@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<netinet/in.h>
 #include <fcntl.h>
+#include "../ERR/ERR_EXIT.h"
 
 
 ssize_t readn(int fd, void *buf, size_t count);
