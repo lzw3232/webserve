@@ -9,7 +9,12 @@ ssize_t readn(int fd, void *buf, size_t count){
     char* bufp = (char*)buf;
     while(nleft>0){
         if((nread = recv(fd,bufp,nleft,0))<0){
-            if(errno = EINTR) continue;
+            if (errno == EINTR)
+                nread = 0;
+            else if (errno == EAGAIN)
+            {
+                return readNum;
+            } 
             ERR_EXIT("errno");
         }
         else if(nread==0){
@@ -30,9 +35,15 @@ ssize_t writen(int fd, void *buf, size_t count){
     char* bufp = (char*)buf;
     while(nleft>0){
         if((nwrite = send(fd,bufp,nleft,0))<0){
-            if(errno = EINTR)
-                continue;
-                return-1;
+            if (nwrite < 0)
+            {
+                if (errno == EINTR || errno == EAGAIN)
+                {
+                    nwrite = 0;
+                    continue;
+                }
+            ERR_EXIT("errno");
+            }
         }
         else if(nwrite==0){
             continue;

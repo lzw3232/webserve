@@ -20,8 +20,18 @@ void task::run(){
     }
     else{
         fputs(recvbuf,stdout);
+        http *myhttp = new http();
+        char* request = myhttp->do_request(recvbuf);
+        // event.events = (*events)[id].events | EPOLLOUT;
         //写数据
-        writen(conn,&recvbuf,sizeof(recvbuf));
+        writen(conn,&request,sizeof(request));
+        close(conn);
+        event = (*events)[id];
+
+        std::unique_lock<std::mutex>lk(_mutex);
+        epoll_ctl(epollfd,EPOLL_CTL_DEL,conn,&event);
+        events->erase(events->begin()+id,events->begin()+id+1);
+        lk.unlock();
     }
     return;
 }

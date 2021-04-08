@@ -16,13 +16,8 @@
 #include "./framework/serve/serve.h"
 #include "./framework/thread/threadpool.h"
 
-using namespace std;
 
-void m(int i,int j){
-    sleep(3);
-    cout<<i<<endl;
-    return;
-}
+using namespace std;
 
 int main(){
     int port = 5188;

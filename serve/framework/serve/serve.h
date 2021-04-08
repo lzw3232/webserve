@@ -20,6 +20,7 @@
 #include "../epoll/epoll.h"
 #include "../thread/threadpool.h"
 #include "../task/task.h"
+#include "../log/log.h"
 
 
  class serve
@@ -28,7 +29,6 @@
     int listenfd;
     int epollfd;
     std::vector<epoll_event> events;
-
     const int EPOLLWAIT_TIME = 10000;
     threadpool *pool;
 

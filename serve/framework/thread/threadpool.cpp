@@ -38,6 +38,7 @@ void threadpool::worker()
         lk.unlock(); 
         cond.notify_one();
         t->run();
+        delete t;
     }
     return;
 }

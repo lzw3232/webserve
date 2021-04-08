@@ -9,6 +9,7 @@
 
 #include "../ERR/ERR_EXIT.h"
 #include "../util/util.h"
+#include "../http/http.h"
 
 class task
 {

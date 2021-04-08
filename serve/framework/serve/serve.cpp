@@ -2,6 +2,11 @@
 
 serve::serve(int port)
 {
+    //启动日志
+    if(!log::getInstance()->init("web.log"))
+        ERR_EXIT("log");
+
+    //绑定post
     if((listenfd = socket(AF_INET,SOCK_STREAM,0))<0)
         ERR_EXIT("socket");
     
